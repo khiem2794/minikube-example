@@ -1,0 +1,55 @@
+minikube start --driver=hyperv
+minikube delete
+
+kubectl create deployment nginx-depl --image=nginx
+kubectl edit deployment nginx-depl
+kubectl port-forward deployment/nginx-depl 8080:80
+kubectl get deployment nginx-depl -o yaml > res.yaml 
+
+kubectl get pod -o wide
+kubectl describe pod nginx-depl-7dc9b7f7d-9l8ck
+kubectl logs nginx-depl-7dc9b7f7d-9l8ck
+kubectl exec -it nginx-depl-7dc9b7f7d-9l8ck /bin/bash
+kubectl port-forward pods/nginx-depl-7dc9b7f7d-9l8ck 8080:80
+
+kubectl delete deployment nginx-depl
+
+---------------------------------------------------------------------
+kubectl apply -f nginx-depl.yaml
+kubectl describe service nginx-svc 
+kubectl port-forward service/nginx-svc 8080:80
+kubectl delete -f nginx-depl.yaml
+
+---------------------------------------------------------------------
+kubectl apply -f mongodb_express_depl.yaml
+kubectl -n mongodb port-forward service/mongo-express-svc 8080:8081
+kubectl delete -f mongodb_express_depl.yaml
+
+----------------------------------------------------------------------
+minikube addons enable ingress
+kubectl -n kubernetes-dashboard get svc -o wide
+kubectl apply -f .\dashboard-ingress.yaml
+kubectl -n kubernetes-dashboard get ingress -w    
+kubectl delete -f .\dashboard-ingress.yaml
+
+----------------------------------------------------------------------
+kubectl apply -f hello-world.yaml
+kubectl -n hello-world get ingress -w
+kubectl -n hello-world describe ingress hello-world-ingress
+kubectl delete -f hello-world.yaml
+
+------------------------------------------------------------------------
+openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=hello-world.info" -days 365
+kubectl create namespace hello-world-ossl
+kubectl -n hello-world-ossl create secret tls openssl-tls --cert=tls.crt --key=tls.key
+kubectl apply -f hello-world-ossl-depl.yaml
+kubectl -n hello-world-ossl get ingress -w
+kubectl delete -f hello-world-ossl-depl.yaml
+
+----------------------------------------------------------------------
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/cert-manager.yaml
+kubectl apply -f hello-world-tls-ca.yaml
+kubectl apply -f hello-world-tls-depl.yaml
+kubectl -n hello-world-tls get ingress -w
+kubectl delete -f hello-world-tls-depl.yaml
+kubectl delete -f hello-world-tls-ca.yaml
